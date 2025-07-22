@@ -36,6 +36,8 @@ jobs:
       - name: Merge PR (if needed)
         if: ${{ github.event_name == 'pull_request' }}
         run: |
+          git config --global user.name "FastDeployCI"
+          git config --global user.email "fastdeploy_ci@example.com"
           echo "Fetching and merging PR..."
           git fetch origin pull/${{ github.event.pull_request.number }}/head:pr/${{ github.event.pull_request.number }}
           git merge --no-ff pr/${{ github.event.pull_request.number }}
