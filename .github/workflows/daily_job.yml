@@ -1,0 +1,21 @@
+name: Daily and Manual Job
+
+on:
+  schedule:
+    # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
+    - cron: '0 18 * * *'
+  workflow_dispatch: # Manual trigger
+permissions: read-all
+
+jobs:
+  clone:
+    name: FD-Clone-Linux
+    uses: ./.github/workflows/_clone_linux.yml
+
+  docker_build:
+    name: DOCKER_IMAGE_BUILD
+    needs: clone
+    uses: ./.github/workflows/_build_linux.yml
+    with:
+      DOCKER_IMAGE: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate-test
+      FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
