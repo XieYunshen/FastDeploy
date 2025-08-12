@@ -7,15 +7,87 @@ on:
   workflow_dispatch: # Manual trigger
 permissions: read-all
 
-jobs:
-  clone:
-    name: FD-Clone-Linux
-    uses: ./.github/workflows/_clone_linux.yml
 
-  docker_build:
-    name: DOCKER_IMAGE_BUILD
-    needs: clone
-    uses: ./.github/workflows/_build_linux.yml
-    with:
-      DOCKER_IMAGE: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate-test
-      FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
+jobs:
+  # clone:
+  #   environment: CodeSync
+  #   name: FD-Clone-Linux
+  #   uses: ./.github/workflows/_clone_linux.yml
+
+  clone:
+    environment: CodeSync
+    name: FD-Clone-Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: FD Clone
+        run: |
+          echo "The built wheel is located at: ${{ needs.build.outputs.wheel_path }}"
+    outputs:
+      repo_archive_url: ${{ steps.set_output.outputs.repo_archive_url }}
+    steps:
+      - name: Clone FastDeploy
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request'
+                && github.event.pull_request.base.ref
+                || github.ref_name }}
+          submodules: 'recursive'
+          fetch-depth: 1000
+
+      - name: Merge PR (if needed)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git config --global user.name "FastDeployCI"
+          git config --global user.email "fastdeploy_ci@example.com"
+          echo "Fetching and merging PR..."
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr/${{ github.event.pull_request.number }}
+          git merge --no-ff pr/${{ github.event.pull_request.number }}
+          echo "PR Branch log "
+          git log --oneline -n 5 pr/${{ github.event.pull_request.number }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Code Info Show and Upload
+        id: set_output
+        env:
+          AK: ${{ secrets.BOS_AK }}
+          SK: ${{ secrets.BOS_SK }}
+        run: |
+          git config --unset http.https://github.com/.extraheader
+          git submodule foreach --recursive sh -c "git config --local --unset-all 'http.https://github.com/.extraheader'"
+          git submodule foreach --recursive sh -c "git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'"
+          echo "Current HEAD Log:"
+          git log --oneline -n 5
+          ls
+          cd ..
+          tar -zcf FastDeploy.tar.gz FastDeploy
+          if [[ "${{ github.event_name }}" == "pull_request" ]];then
+            commit_id=${{ github.event.pull_request.head.sha }}
+            pr_num=${{ github.event.pull_request.number }}
+            target_path=paddle-qa/PR/FastDeploy/${pr_num}/${commit_id}
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            commit_id=${{ github.sha }}
+            tag_name=${{ github.ref_name }}
+            target_path=paddle-qa/TAG/FastDeploy/${tag_name}/${commit_id}
+          else
+            commit_id=${{ github.sha }}
+            branch_name=${{ github.ref_name }}
+            target_path=paddle-qa/BRANCH/FastDeploy/${branch_name}/${commit_id}
+          fi
+          wget  -q --no-proxy --no-check-certificate https://paddle-qa.bj.bcebos.com/CodeSync/develop/PaddlePaddle/PaddleTest/tools/bos_tools.py
+          push_file=$(realpath bos_tools.py)
+          python -m pip install bce-python-sdk==0.9.29
+          ls
+          python ${push_file} FastDeploy.tar.gz ${target_path}
+          target_path_stripped="${target_path#paddle-qa/}"
+          REPO_ARCHIVE_URL=https://paddle-qa.bj.bcebos.com/${target_path_stripped}/FastDeploy.tar.gz
+          echo "repo_archive_url=${REPO_ARCHIVE_URL}" >> $GITHUB_OUTPUT
+
+
+  # docker_build:
+  #   name: DOCKER_IMAGE_BUILD
+  #   needs: clone
+  #   uses: ./.github/workflows/_ci_images_update.yml
+  #   with:
+  #     DOCKER_IMAGE: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate-test
+  #     FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
