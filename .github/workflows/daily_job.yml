@@ -75,14 +75,14 @@ jobs:
           REPO_ARCHIVE_URL=https://paddle-qa.bj.bcebos.com/${target_path_stripped}/FastDeploy.tar.gz
           echo "repo_archive_url=${REPO_ARCHIVE_URL}" >> $GITHUB_OUTPUT
 
-  # resultshow:
-  #   name: Use Build Output
-  #   needs: clone
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Print wheel path
-  #       run: |
-  #         echo "The code archive is located at: ${{ needs.clone.outputs.repo_archive_url }}"
+  resultshow:
+    name: Show Code Archive Output
+    needs: clone
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print wheel path
+        run: |
+          echo "The code archive is located at: ${{ needs.clone.outputs.repo_archive_url }}"
 
   # docker_build:
   #   name: DOCKER_IMAGE_BUILD
