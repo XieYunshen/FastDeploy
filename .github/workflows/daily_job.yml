@@ -1,12 +1,14 @@
 name: Daily and Manual Job
 
 on:
+  workflow_dispatch:
+  push:
   # schedule:
   #   # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
   #   - cron: '0 18 * * *'
   # Manual trigger
-  workflow_dispatch:
-  push:
+  # workflow_dispatch:
+  # push:
 permissions: read-all
 
 
@@ -92,3 +94,102 @@ jobs:
     with:
       DOCKER_IMAGE_NAME: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate-test
       FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
+
+build_version:
+  name: BUILD_VERSION_CHECK
+  runs-on: ubuntu-latest
+  outputs:
+    FD_VERSION: ${{ steps.set_output.outputs.FD_VERSION }}
+  steps:
+    - name: Set Version
+      id: set_output
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          FD_VERSION="0.0.0"
+
+        elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+          FD_VERSION="${{ github.ref_name }}"
+
+        elif [[ "${{ github.ref_type }}" == "branch" && "${{ github.ref_name }}" =~ ^release/(.+)$ ]]; then
+          ver="${BASH_REMATCH[1]}"
+          # 分割版本号并补齐到三段
+          IFS='.' read -r -a parts <<< "$ver"
+          while [ ${#parts[@]} -lt 3 ]; do
+            parts+=("0")
+          done
+          FD_VERSION="${parts[0]}.${parts[1]}.${parts[2]}"
+        else
+          FD_VERSION="0.0.0"
+        fi
+
+        # Nightly build 开关
+        if [[ "${{ github.ref_name }}" == "develop" ]]; then
+          WITH_NIGHTLY_BUILD="ON"
+        else
+          WITH_NIGHTLY_BUILD="OFF"
+        fi
+
+        echo "FD_VERSION=$FD_VERSION"
+        echo "WITH_NIGHTLY_BUILD=$WITH_NIGHTLY_BUILD"
+        echo "FD_VERSION=$FD_VERSION" >> $GITHUB_OUTPUT
+        echo "WITH_NIGHTLY_BUILD=$WITH_NIGHTLY_BUILD" >> $GITHUB_OUTPUT
+
+  build_sm8090:
+    name: BUILD_SM8090
+    needs: [clone, build_version]
+    uses: ./.github/workflows/_build_linux.yml
+    with:
+      DOCKER_IMAGE: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate
+      FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
+      COMPILE_ARCH: "80,90"
+      WITH_NIGHTLY_BUILD: ${{ needs.build_version.outputs.WITH_NIGHTLY_BUILD }}
+      FD_VERSION: ${{ needs.build_version.outputs.FD_VERSION }}
+
+  # build_sm8689:
+  #   name: BUILD_SM8689
+  #   needs: [clone, build_version]
+  #   uses: ./.github/workflows/_build_linux.yml
+  #   with:
+  #     DOCKER_IMAGE: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate
+  #     FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
+  #     COMPILE_ARCH: "80,90"
+  #     WITH_NIGHTLY_BUILD: ${{ needs.build_version.outputs.WITH_NIGHTLY_BUILD }}
+  #     FD_VERSION: ${{ needs.build_version.outputs.FD_VERSION }}
+
+  paddle_pypi_upload_sm8090:
+    name: PADDLE_PYPI_UPLOAD
+    needs: build_sm8090
+    runs-on: ubuntu-latest
+    env:
+      AK: ${{ secrets.BOS_AK }}
+      SK: ${{ secrets.BOS_SK }}
+      FASTDEPLOY_WHEEL_URL: ${{ needs.build.outputs.wheel_path }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Wheel Info Show and Upload
+        id: set_output
+        run: |
+          echo "The wheel is located at: ${{ needs.build_sm8090.outputs.wheel_path }}"
+          wget -q --no-check-certificate ${{ needs.build_sm8090.outputs.wheel_path }}
+          filename=$(basename ${{ needs.build_sm8090.outputs.wheel_path }})
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]];then
+            commit_id=${{ github.event.pull_request.head.sha }}
+            pr_num=${{ github.event.pull_request.number }}
+            target_path=paddle-qa/PR/FastDeploy/${pr_num}/${commit_id}
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            commit_id=${{ github.sha }}
+            tag_name=${{ github.ref_name }}
+            target_path=paddle-qa/TAG/FastDeploy/${tag_name}/${commit_id}
+          else
+            commit_id=${{ github.sha }}
+            branch_name=${{ github.ref_name }}
+            target_path=paddle-qa/BRANCH/FastDeploy/${branch_name}/${commit_id}
+          fi
+          wget  -q --no-proxy --no-check-certificate https://paddle-qa.bj.bcebos.com/CodeSync/develop/PaddlePaddle/PaddleTest/tools/bos_tools.py
+          push_file=$(realpath bos_tools.py)
+          python -m pip install bce-python-sdk==0.9.29
+          ls
+          python ${push_file} ${filename} ${target_path}
