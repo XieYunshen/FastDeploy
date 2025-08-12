@@ -1,9 +1,9 @@
 name: Daily and Manual Job
 
 on:
-  schedule:
-    # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
-    - cron: '0 18 * * *'
+  # schedule:
+  #   # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
+  #   - cron: '0 18 * * *'
   workflow_dispatch: # Manual trigger
 permissions: read-all
 
