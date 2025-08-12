@@ -9,11 +9,6 @@ permissions: read-all
 
 
 jobs:
-  # clone:
-  #   environment: CodeSync
-  #   name: FD-Clone-Linux
-  #   uses: ./.github/workflows/_clone_linux.yml
-
   clone:
     environment: CodeSync
     name: FD-Clone-Linux
