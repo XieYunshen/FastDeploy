@@ -18,10 +18,6 @@ jobs:
     environment: CodeSync
     name: FD-Clone-Linux
     runs-on: ubuntu-latest
-    steps:
-      - name: FD Clone
-        run: |
-          echo "The built wheel is located at: ${{ needs.build.outputs.wheel_path }}"
     outputs:
       repo_archive_url: ${{ steps.set_output.outputs.repo_archive_url }}
     steps:
@@ -83,6 +79,14 @@ jobs:
           REPO_ARCHIVE_URL=https://paddle-qa.bj.bcebos.com/${target_path_stripped}/FastDeploy.tar.gz
           echo "repo_archive_url=${REPO_ARCHIVE_URL}" >> $GITHUB_OUTPUT
 
+  resultshow:
+    name: Use Build Output
+    needs: clone
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print wheel path
+        run: |
+          echo "The code archive is located at: ${{ needs.clone.outputs.repo_archive_url }}"
 
   # docker_build:
   #   name: DOCKER_IMAGE_BUILD
