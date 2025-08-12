@@ -95,44 +95,44 @@ jobs:
       DOCKER_IMAGE_NAME: ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleqa:fastdeploy-ciuse-cuda126-dailyupdate-test
       FASTDEPLOY_ARCHIVE_URL: ${{ needs.clone.outputs.repo_archive_url }}
 
-build_version:
-  name: BUILD_VERSION_CHECK
-  runs-on: ubuntu-latest
-  outputs:
-    FD_VERSION: ${{ steps.set_output.outputs.FD_VERSION }}
-  steps:
-    - name: Set Version
-      id: set_output
-      run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          FD_VERSION="0.0.0"
+  build_version:
+    name: BUILD_VERSION_CHECK
+    runs-on: ubuntu-latest
+    outputs:
+      FD_VERSION: ${{ steps.set_output.outputs.FD_VERSION }}
+    steps:
+      - name: Set Version
+        id: set_output
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            FD_VERSION="0.0.0"
 
-        elif [[ "${{ github.ref_type }}" == "tag" ]]; then
-          FD_VERSION="${{ github.ref_name }}"
+          elif [[ "${{ github.ref_type }}" == "tag" ]]; then
+            FD_VERSION="${{ github.ref_name }}"
 
-        elif [[ "${{ github.ref_type }}" == "branch" && "${{ github.ref_name }}" =~ ^release/(.+)$ ]]; then
-          ver="${BASH_REMATCH[1]}"
-          # 分割版本号并补齐到三段
-          IFS='.' read -r -a parts <<< "$ver"
-          while [ ${#parts[@]} -lt 3 ]; do
-            parts+=("0")
-          done
-          FD_VERSION="${parts[0]}.${parts[1]}.${parts[2]}"
-        else
-          FD_VERSION="0.0.0"
-        fi
+          elif [[ "${{ github.ref_type }}" == "branch" && "${{ github.ref_name }}" =~ ^release/(.+)$ ]]; then
+            ver="${BASH_REMATCH[1]}"
+            # 分割版本号并补齐到三段
+            IFS='.' read -r -a parts <<< "$ver"
+            while [ ${#parts[@]} -lt 3 ]; do
+              parts+=("0")
+            done
+            FD_VERSION="${parts[0]}.${parts[1]}.${parts[2]}"
+          else
+            FD_VERSION="0.0.0"
+          fi
 
-        # Nightly build 开关
-        if [[ "${{ github.ref_name }}" == "develop" ]]; then
-          WITH_NIGHTLY_BUILD="ON"
-        else
-          WITH_NIGHTLY_BUILD="OFF"
-        fi
+          # Nightly build 开关
+          if [[ "${{ github.ref_name }}" == "develop" ]]; then
+            WITH_NIGHTLY_BUILD="ON"
+          else
+            WITH_NIGHTLY_BUILD="OFF"
+          fi
 
-        echo "FD_VERSION=$FD_VERSION"
-        echo "WITH_NIGHTLY_BUILD=$WITH_NIGHTLY_BUILD"
-        echo "FD_VERSION=$FD_VERSION" >> $GITHUB_OUTPUT
-        echo "WITH_NIGHTLY_BUILD=$WITH_NIGHTLY_BUILD" >> $GITHUB_OUTPUT
+          echo "FD_VERSION=$FD_VERSION"
+          echo "WITH_NIGHTLY_BUILD=$WITH_NIGHTLY_BUILD"
+          echo "FD_VERSION=$FD_VERSION" >> $GITHUB_OUTPUT
+          echo "WITH_NIGHTLY_BUILD=$WITH_NIGHTLY_BUILD" >> $GITHUB_OUTPUT
 
   build_sm8090:
     name: BUILD_SM8090
