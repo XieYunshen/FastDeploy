@@ -5,6 +5,7 @@ on:
   #   # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
   #   - cron: '0 18 * * *'
   workflow_dispatch: # Manual trigger
+  push:
 permissions: read-all
 
 
