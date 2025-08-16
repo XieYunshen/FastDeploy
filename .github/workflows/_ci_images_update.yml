@@ -20,7 +20,7 @@ on:
         type: string
 
 jobs:
-  run_tests_with_coverage:
+  docker_build:
     runs-on: [self-hosted, DockerBuild]
     steps:
       - name: Code Prepare
@@ -62,3 +62,4 @@ jobs:
           docker build -t ${docker_image_name} \
           -f Dockerfile.ci . \
           --network host
+          docker push ${docker_image_name}
