@@ -1,4 +1,4 @@
-name: Daily and Manual Job
+name: Publish Job
 
 # on:
 #   workflow_dispatch:
