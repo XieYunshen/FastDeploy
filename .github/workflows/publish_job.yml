@@ -1,8 +1,8 @@
 name: Daily and Manual Job
 
-on:
-  workflow_dispatch:
-  push:
+# on:
+#   workflow_dispatch:
+#   push:
   # schedule:
   #   # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
   #   - cron: '0 18 * * *'
@@ -10,14 +10,15 @@ on:
   # workflow_dispatch:
   # push:
 
-# on:
-#   schedule:
-#     - cron: '0 18 * * *'   # 2:00 AM China Standard Time (UTC+8)
-#   push:
-#     branches:
-#       - develop
-#     tags:
-#       - '*'
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *'   # 2:00 AM China Standard Time (UTC+8)
+  push:
+    # branches:
+    #   - develop
+    tags:
+      - '*'
 
 
 permissions: read-all
