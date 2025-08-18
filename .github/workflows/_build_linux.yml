@@ -22,7 +22,7 @@ on:
         description: "Enable nightly build mode (e.g. add date suffix to version)"
         required: false
         type: string
-        default: "ON"
+        default: "OFF"
       FD_VERSION:
         description: "FastDeploy Package Version"
         required: false
@@ -98,6 +98,7 @@ jobs:
           BRANCH_REF: ${{ github.ref_name }}
           PADDLEVERSION: ${{ inputs.PADDLEVERSION }}
           PADDLE_WHL_URL: ${{ inputs.PADDLE_WHL_URL }}
+          WITH_NIGHTLY_BUILD: ${{ inputs.WITH_NIGHTLY_BUILD }}
         run: |
             set -x
             runner_name="${{ runner.name }}"
