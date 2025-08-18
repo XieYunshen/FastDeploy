@@ -34,7 +34,8 @@ jobs:
     if: |
       (github.event_name == 'schedule' && github.ref_name == 'develop') ||
       (github.event_name == 'push' && github.ref_type == 'tag') ||
-      (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch') &&
+        (github.event.inputs.ref == 'develop' || github.event.inputs.ref == 'tag'))
     env:
       TAG_VERSION_MAPPINGS: ${{ vars.TAG_VERSION_MAPPINGS }}
       FD_VERSION_DEV: ${{ vars.FD_VERSION_DEV }}
