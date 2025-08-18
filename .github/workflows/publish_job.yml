@@ -1,15 +1,5 @@
 name: Publish Job
 
-# on:
-#   workflow_dispatch:
-#   push:
-  # schedule:
-  #   # Runs at 2:00 AM China Standard Time (UTC+8), which is 18:00 UTC on the previous day
-  #   - cron: '0 18 * * *'
-  # Manual trigger
-  # workflow_dispatch:
-  # push:
-
 on:
   workflow_dispatch:
   schedule:
@@ -19,7 +9,6 @@ on:
     #   - develop
     tags:
       - '*'
-
 
 permissions: read-all
 
@@ -197,8 +186,8 @@ jobs:
       PADDLE_WHL_URL: ${{ needs.publish_pre_check.outputs.compile_use_paddle_whl_url }}
 
   paddle_pypi_upload_sm8090:
-    environment: CodeSync
-    name: PADDLE_PYPI_UPLOAD
+    environment: PaddleSourceUpload
+    name: PADDLE_PYPI_UPLOAD_8090
     needs: build_sm8090
     runs-on: ubuntu-latest
     env:
@@ -217,9 +206,9 @@ jobs:
           wget -q --no-check-certificate ${FASTDEPLOY_WHEEL_URL}
           filename=$(basename ${FASTDEPLOY_WHEEL_URL})
           if [[ "${{ github.ref_name }}" == "develop" ]];then
-            target_path=paddle-qa/paddle-whl/nightly/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
+            target_path=paddle-whl/nightly/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
           elif [[ "${{ github.ref_type }}" == "tag" ]]; then
-            target_path=paddle-qa/paddle-whl/stable/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
+            target_path=paddle-whl/stable/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
           else
             echo "Not develop or tag, do nothing"
           fi
@@ -230,8 +219,8 @@ jobs:
           python ${push_file} ${filename} ${target_path}
 
   paddle_pypi_upload_sm8689:
-    environment: CodeSync
-    name: PADDLE_PYPI_UPLOAD
+    environment: PaddleSourceUpload
+    name: PADDLE_PYPI_UPLOAD_8689
     needs: build_sm8689
     runs-on: ubuntu-latest
     env:
@@ -250,9 +239,9 @@ jobs:
           wget -q --no-check-certificate ${FASTDEPLOY_WHEEL_URL}
           filename=$(basename ${FASTDEPLOY_WHEEL_URL})
           if [[ "${{ github.ref_name }}" == "develop" ]];then
-            target_path=paddle-qa/paddle-whl/nightly/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
+            target_path=paddle-whl/nightly/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
           elif [[ "${{ github.ref_type }}" == "tag" ]]; then
-            target_path=paddle-qa/paddle-whl/stable/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
+            target_path=paddle-whl/stable/fastdeploy-gpu-${COMPILE_ARCH//,/_}/fastdeploy-gpu
           else
             echo "Not develop or tag, do nothing"
           fi
