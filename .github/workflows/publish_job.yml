@@ -28,12 +28,14 @@ jobs:
     env:
       TAG_VERSION_MAPPINGS: ${{ vars.TAG_VERSION_MAPPINGS }}
       FD_VERSION_DEV: ${{ vars.FD_VERSION_DEV }}
+      COMPILE_USE_PADDLE_WHL_URL_MAPPINGS: ${{ vars.COMPILE_USE_PADDLE_WHL_URL_MAPPINGS }}
     outputs:
-      compile_use_paddle_version: ${{ steps.set_output.outputs.repo_archive_url }}
+      compile_use_paddle_version: ${{ steps.set_output.outputs.compile_use_paddle_version }}
       compile_continue: ${{ steps.set_output.outputs.compile_continue }}
       fd_version: ${{ steps.set_output.outputs.fd_version }}
       with_nightly_build: ${{ steps.set_output.outputs.with_nightly_build }}
       compile_use_paddle_whl_url: ${{ steps.set_output.outputs.compile_use_paddle_whl_url }}
+
     steps:
       - name: Get tag version
         if: github.ref_type == 'tag'
@@ -86,8 +88,8 @@ jobs:
             with_nightly_build=ON
           fi
           # Todo
-          # 通过变量COMPILE_USE_PADDLE_WHL_URL中的映射关系,决定是否是安装指定版本的Paddle还是直接安装URL
-          for pair in $(echo $COMPILE_USE_PADDLE_WHL_URL | tr ';' ' '); do
+          # 通过变量COMPILE_USE_PADDLE_WHL_URL_MAPPINGS中的映射关系,决定是否是安装指定版本的Paddle还是直接安装URL
+          for pair in $(echo $COMPILE_USE_PADDLE_WHL_URL_MAPPINGS | tr ';' ' '); do
             branch=$(echo "$pair" | cut -d',' -f1)
             paddle_whl_url=$(echo "$pair" | cut -d',' -f2)
             if [[ "$branch" == "${{ github.ref_name }}" ]]; then
@@ -101,6 +103,14 @@ jobs:
           echo "compile_use_paddle_version=${compile_use_paddle_version}" >> $GITHUB_OUTPUT
           echo "fd_version=${fd_version}" >> $GITHUB_OUTPUT
           echo "with_nightly_build=${with_nightly_build:-OFF}" >> $GITHUB_OUTPUT
+
+  publish_pre_check:
+    runs-on: ubuntu-latest
+    needs: publish_pre_check
+    steps:
+      - name: Print outputs as JSON
+        run: |
+          echo '${{ toJSON(needs.publish_pre_check.outputs) }}'
 
   clone:
     environment: CodeSync
@@ -173,7 +183,7 @@ jobs:
       COMPILE_ARCH: "80,90"
       WITH_NIGHTLY_BUILD: ${{ needs.publish_pre_check.outputs.with_nightly_build }}
       FD_VERSION: ${{ needs.publish_pre_check.outputs.fd_version }}
-      PADDLEVERSION: ${{ needs.publish_pre_check.outputs.PADDLEVERSION }}
+      PADDLEVERSION: ${{ needs.publish_pre_check.outputs.compile_use_paddle_version }}
       PADDLE_WHL_URL: ${{ needs.publish_pre_check.outputs.compile_use_paddle_whl_url }}
 
   build_sm8689:
