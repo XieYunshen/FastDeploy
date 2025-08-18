@@ -104,7 +104,7 @@ jobs:
           echo "fd_version=${fd_version}" >> $GITHUB_OUTPUT
           echo "with_nightly_build=${with_nightly_build:-OFF}" >> $GITHUB_OUTPUT
 
-  publish_pre_check:
+  print_publish_pre_check_outputs:
     runs-on: ubuntu-latest
     needs: publish_pre_check
     steps:
