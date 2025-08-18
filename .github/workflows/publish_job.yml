@@ -66,6 +66,9 @@ jobs:
           fi
       - name: Set Version
         id: set_output
+        env:
+          PADDLE_VERSION: ${{ env.PADDLE_VERSION }}
+          FD_VERSION: ${{ env.FD_VERSION }}
         run: |
           if [[ "${{ github.ref_type }}" == "tag" ]]; then
             if [[ -z "$PADDLE_VERSION" ]]; then
@@ -73,8 +76,8 @@ jobs:
             else
               compile_use_paddle_version=$PADDLE_VERSION
               fd_version=$FD_VERSION
+              compile_continue=true
             fi
-            compile_continue=true
           fi
           if [[ "${{ github.ref_name }}" == "develop" ]];then
             compile_continue=true
@@ -82,21 +85,22 @@ jobs:
             fd_version=${FD_VERSION_DEV}
             with_nightly_build=ON
           fi
-          echo "compile_continue=${compile_continue}" >> $GITHUB_OUTPUT
-          echo "compile_use_paddle_version=${compile_use_paddle_version}" >> $GITHUB_OUTPUT
-          echo "fd_version=${fd_version}" >> $GITHUB_OUTPUT
-          echo "with_nightly_build=${with_nightly_build:-OFF}" >> $GITHUB_OUTPUT
           # Todo
-          # 这里还可以增加一个变量COMPILE_USE_PADDLE_WHL_URL,通过映射关系,决定是否是安装指定版本的Paddle还是直接安装URL
+          # 通过变量COMPILE_USE_PADDLE_WHL_URL中的映射关系,决定是否是安装指定版本的Paddle还是直接安装URL
           for pair in $(echo $COMPILE_USE_PADDLE_WHL_URL | tr ';' ' '); do
             branch=$(echo "$pair" | cut -d',' -f1)
             paddle_whl_url=$(echo "$pair" | cut -d',' -f2)
             if [[ "$branch" == "${{ github.ref_name }}" ]]; then
               FOUND_PADDLE_URL="$paddle_whl_url"
               echo "compile_use_paddle_whl_url=${FOUND_PADDLE_URL}" >> $GITHUB_ENV
+              compile_continue=true
               break
             fi
           done
+          echo "compile_continue=${compile_continue}" >> $GITHUB_OUTPUT
+          echo "compile_use_paddle_version=${compile_use_paddle_version}" >> $GITHUB_OUTPUT
+          echo "fd_version=${fd_version}" >> $GITHUB_OUTPUT
+          echo "with_nightly_build=${with_nightly_build:-OFF}" >> $GITHUB_OUTPUT
 
   clone:
     environment: CodeSync
