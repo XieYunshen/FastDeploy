@@ -77,9 +77,9 @@ jobs:
               compile_continue=false
             else
               compile_use_paddle_version=$PADDLE_VERSION
-              fd_version=$FD_VERSION
               compile_continue=true
             fi
+            fd_version=$FD_VERSION
           fi
           if [[ "${{ github.ref_name }}" == "develop" ]];then
             compile_continue=true
@@ -94,7 +94,7 @@ jobs:
             paddle_whl_url=$(echo "$pair" | cut -d',' -f2)
             if [[ "$branch" == "${{ github.ref_name }}" ]]; then
               FOUND_PADDLE_URL="$paddle_whl_url"
-              echo "compile_use_paddle_whl_url=${FOUND_PADDLE_URL}" >> $GITHUB_ENV
+              echo "compile_use_paddle_whl_url=${FOUND_PADDLE_URL}" >> $GITHUB_OUTPUT
               compile_continue=true
               break
             fi
