@@ -196,7 +196,7 @@ jobs:
       COMPILE_ARCH: "86,89"
       WITH_NIGHTLY_BUILD: ${{ needs.publish_pre_check.outputs.with_nightly_build }}
       FD_VERSION: ${{ needs.publish_pre_check.outputs.fd_version }}
-      PADDLEVERSION: ${{ needs.publish_pre_check.outputs.PADDLEVERSION }}
+      PADDLEVERSION: ${{ needs.publish_pre_check.outputs.compile_use_paddle_version }}
       PADDLE_WHL_URL: ${{ needs.publish_pre_check.outputs.compile_use_paddle_whl_url }}
 
   paddle_pypi_upload_sm8090:
